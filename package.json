@@ -1,12 +1,13 @@
 {
-    "name": "recaptcha-solver",
-    "version": "0.2.10",
+    "name": "recaptcha-solver-ffmpeg",
+    "version": "1.0.1",
     "description": "Solve reCAPTCHA challenges by using offline speech recognition.",
     "keywords": [
         "reCAPTCHA",
-        "playwright"
+        "playwright",
+        "recaptcha-solver"
     ],
-    "author": "JacobLinCool <jacoblincool@gmail.com> (https://github.com/JacobLinCool)",
+    "author": "Karmavir Joshi <karmavir@auranics.com> (https://github.com/kvjoshi)",
     "license": "MIT",
     "main": "lib/index.js",
     "module": "lib/index.mjs",
@@ -36,24 +37,26 @@
         "eslint-config-prettier": "^8.5.0",
         "jest": "^27.5.1",
         "prettier": "^2.7.1",
-        "recaptcha-solver": "workspace:*",
+        "recaptcha-solver-ffmpeg": "file:*",
         "ts-jest": "^27.1.5",
-        "tsup": "^5.12.9",
+        "tsup": "^6.7.0",
         "typedoc": "^0.22.18",
         "typescript": "^4.7.4"
     },
     "dependencies": {
+        "@ffmpeg/core": "^0.11.0",
+        "@ffmpeg/ffmpeg": "^0.11.3",
         "playwright-core": "^1.24.2",
         "vosk-lib": "^0.1.3",
         "wav": "^1.0.2",
         "yauzl": "^2.10.0"
     },
-    "homepage": "https://github.com/JacobLinCool/recaptcha-solver#readme",
+    "homepage": "https://github.com/kvjoshi/recaptcha-solver-ffmpeg#readme",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/JacobLinCool/recaptcha-solver.git"
+        "url": "git+https://github.com/kvjoshi/recaptcha-solver-ffmpeg.git"
     },
     "bugs": {
-        "url": "https://github.com/JacobLinCool/recaptcha-solver/issues"
+        "url": "https://github.com/kvjoshi/recaptcha-solver-ffmpeg/issues"
     }
 }

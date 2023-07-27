@@ -1,12 +1,19 @@
 # reCAPTCHA Solver
 
+
+
 Solve reCAPTCHA challenges by using offline speech recognition.
 
 > It can be very useful when you want to do E2E tests with your application protected by reCAPTCHA.
 
-Requirements:
+> Forked from JacobLinCool/recaptcha-solver
 
-- `ffmpeg` installed
+> Added ffmpeg as dependancy took inspiration from dxball/recaptcha-solver
+
+
+
+>Now  ffmpeg is installed as a dependancy
+
 
 Features:
 
@@ -19,7 +26,7 @@ Features:
 ## Install
 
 ```sh
-npm i recaptcha-solver
+npm i recaptcha-solver-ffmpeg
 ```
 
 It will automatically download a 40 MB acoustic model which will be used to solve the challenges.
@@ -32,7 +39,7 @@ Checkout [`example/index.mjs`](example/index.mjs)!
 
 ```js
 import { chromium } from "playwright-core";
-import { solve } from "recaptcha-solver";
+import { solve } from "recaptcha-solver-ffmpeg";
 
 const EXAMPLE_PAGE = "https://www.google.com/recaptcha/api2/demo";
 
@@ -87,4 +94,4 @@ solve reCAPTCHA: 4.072s
 
 [demo.mp4 (23s)](example/demo.mp4)
 
-https://user-images.githubusercontent.com/28478594/181560802-a6be4c0f-3258-4cd6-b605-3d9671b04a8f.mp4
+(You can see the demo page in [`example/index.mjs`](example/index.mjs)

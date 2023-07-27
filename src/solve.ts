@@ -1,14 +1,14 @@
-import { spawnSync } from "node:child_process";
-import fs from "node:fs";
-import path from "node:path";
-import os from "node:os";
-import { Readable } from "node:stream";
+import { Duplex, Readable } from "node:stream";
 import { Page, Response } from "playwright-core";
 import vosk from "vosk-lib";
 import wav from "wav";
+import { createFFmpeg } from "@ffmpeg/ffmpeg";
+
 import { debug } from "./debug.js";
-import { MODEL_DIR, SOURCE_FILE, OUT_FILE, MAIN_FRAME, BFRAME, CHALLENGE } from "./constants.js";
+import { BFRAME, CHALLENGE, MAIN_FRAME, MODEL_DIR, OUT_FILE, SOURCE_FILE } from "./constants.js";
 import { Mutex, sleep } from "./utils.js";
+
+const ffmpeg = createFFmpeg({ log: true });
 
 vosk.setLogLevel(-1);
 const model = new vosk.Model(MODEL_DIR);
@@ -110,7 +110,7 @@ export async function solve(
         if (res.headers()["content-type"] === "audio/mp3") {
             debug(`got audio from ${res.url()}`);
             answer = new Promise((resolve) => {
-                get_text(res, ffmpeg)
+                get_text(res)
                     .then(resolve)
                     .catch(() => undefined);
             });
@@ -165,16 +165,19 @@ export async function solve(
     return true;
 }
 
-function create_dir(): string {
-    const dir = path.resolve(os.tmpdir(), "reSOLVER-" + Math.random().toString().slice(2));
-    if (fs.existsSync(dir)) {
-        fs.rmSync(dir, { recursive: true });
-    }
-    fs.mkdirSync(dir, { recursive: true });
-    return dir;
+function bufferToStream(buffer: Uint8Array): Readable {
+    let stream = new Duplex();
+    stream.push(buffer);
+    stream.push(null);
+    return stream;
 }
 
-function convert(dir: string, ffmpeg = "ffmpeg"): void {
+
+async function convertFile(mp3Data: Buffer): Promise<Uint8Array> {
+    if(!ffmpeg.isLoaded()) {
+       await ffmpeg.load();
+    }
+    ffmpeg.FS("writeFile", SOURCE_FILE, mp3Data);
     const args = [
         "-loglevel",
         "error",
@@ -188,22 +191,32 @@ function convert(dir: string, ffmpeg = "ffmpeg"): void {
         "16000",
         OUT_FILE,
     ];
-
-    spawnSync(ffmpeg, args, { cwd: dir, stdio: process.env.VERBOSE ? "inherit" : "ignore" });
+    // @ts-ignore
+    ffmpeg.setProgress(({ ratio }) => {
+        debug(`progress: ${ratio * 100}%`);
+    });
+    await ffmpeg.run(...args);
+    const data = ffmpeg.FS("readFile", OUT_FILE);
+    ffmpeg.FS("unlink", SOURCE_FILE);
+    ffmpeg.FS("unlink", OUT_FILE);
+    return data;
 }
 
-function reconize(dir: string): Promise<string> {
+function recognize(buf: Uint8Array): Promise<string> {
     return new Promise((resolve) => {
-        const stream = fs.createReadStream(path.resolve(dir, OUT_FILE), { highWaterMark: 4096 });
+        const stream = bufferToStream(buf)
 
         const reader = new wav.Reader();
+
         const readable = new Readable().wrap(reader);
+
         reader.on("format", async ({ audioFormat, sampleRate, channels }) => {
             if (audioFormat != 1 || channels != 1) {
                 throw new Error("Audio file must be WAV with mono PCM.");
             }
 
             const rec = new vosk.Recognizer({ model, sampleRate });
+
             rec.setMaxAlternatives(10);
             rec.setWords(true);
             rec.setPartialWords(true);
@@ -214,10 +227,9 @@ function reconize(dir: string): Promise<string> {
                     const result = rec
                         .result()
                         .alternatives.sort((a, b) => b.confidence - a.confidence)[0].text;
-                    stream.close(() => resolve(result));
+                     resolve(result);
                 }
             }
-
             rec.free();
         });
 
@@ -225,13 +237,8 @@ function reconize(dir: string): Promise<string> {
     });
 }
 
-async function get_text(res: Response, ffmpeg = "ffmpeg"): Promise<string> {
-    const temp_dir = create_dir();
-
-    fs.writeFileSync(path.resolve(temp_dir, SOURCE_FILE), await res.body());
-    convert(temp_dir, ffmpeg);
-    const result = await reconize(temp_dir);
-
-    fs.rmSync(temp_dir, { recursive: true });
-    return result;
+async function get_text(res: Response): Promise<string> {
+    const mp3Data = await res.body();
+    const wavData = await convertFile(mp3Data);
+    return await recognize(wavData);
 }

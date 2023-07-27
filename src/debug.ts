@@ -1,5 +1,5 @@
 export function debug(...args: unknown[]): void {
     if (process.env.VERBOSE) {
-        console.log("[reCAPTCHA solver]", ...args);
+        console.log("[reCAPTCHA solver ffmpeg]", ...args);
     }
 }

@@ -1,5 +1,6 @@
 import { chromium } from "playwright-core";
-import { solve } from "recaptcha-solver";
+
+import { solve } from "recaptcha-solver-ffmpeg";
 
 const EXAMPLE_PAGE = "https://www.google.com/recaptcha/api2/demo";
 
